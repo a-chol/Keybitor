@@ -1,0 +1,148 @@
+; Keybitor.inf
+;
+; Installation inf for the Device that needs filtering adapter.
+;
+; (c) Copyright 1999 Microsoft
+;
+
+[Version]
+Signature="$Windows NT$"
+Provider=%DDK_Ex%
+ClassGUID={4D36E96B-E325-11CE-BFC1-08002BE10318}
+Class=Keyboard
+; Uncomment the following line when you have a valid catalog file.
+;         If you use bogus catalog file installation will fail.
+; Ignore the error from chkinf.
+CatalogFile=Keybitor.cat
+
+DriverVer=03/03/2019, 0.0.0.1
+
+[DestinationDirs]
+DefaultDestDir   = 12
+
+;
+; Driver information
+;
+
+[Manufacturer]
+%DDK_Ex%   = DDK_Ex.Mfg,NTamd64
+
+; For Win2K
+[DDK_Ex.Mfg]
+%DDK_Ex% = Keybitor, ACPI\MSF0001
+
+; For XP and above
+[DDK_Ex.Mfg.NTamd64]
+%DDK_Ex% = Keybitor, ACPI\MSF0001,*PNP0303
+
+;
+; General installation section
+;
+
+[Keybitor.NT]
+; perform port related actions from keyboard.inf
+Include=keyboard.inf
+Needs=STANDARD_Inst
+
+; Copy the driver over
+CopyFiles=Keybitor.CopyFiles
+
+
+;
+; File sections
+;
+
+[Keybitor.CopyFiles]
+Keybitor.sys
+
+
+;
+; Service Installation
+;
+
+[Keybitor.NT.Services]
+AddService = Keybitor,  , Keybitor_Service_Inst
+; Install the port driver and mouclass from keyboard.inf
+Include=keyboard.inf
+Needs=STANDARD_Inst.Services
+
+[Keybitor_Service_Inst]
+DisplayName    = %Keybitor.SvcDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 0                  ; SERVICE_ERROR_IGNORE
+LoadOrderGroup = Keyboard Port
+ServiceBinary  = %12%\Keybitor.sys
+
+[Keybitor.NT.HW]
+; Add the device upper filter
+AddReg = Keybitor.HW.AddReg
+
+; run the directives need by the port driver
+Include=keyboard.inf
+Needs=STANDARD_Inst.HW
+
+[Keybitor.HW.AddReg]
+HKR,,"UpperFilters",0x00010000,"Keybitor"
+
+
+;
+; Source file information
+;
+
+
+[SourceDisksNames]
+1 = %DiskId1%,,,
+
+[SourceDisksFiles]
+Keybitor.sys = 1,,
+
+;
+;--- Keybitor Coinstaller installation ------
+;
+
+[DestinationDirs]
+Keybitor_CoInstaller_CopyFiles = 11
+
+[Keybitor.NT.CoInstallers]
+AddReg=Keybitor_CoInstaller_AddReg
+CopyFiles=Keybitor_CoInstaller_CopyFiles
+
+[Keybitor_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[Keybitor_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[SourceDisksFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+[Keybitor.NT.Wdf]
+KmdfService = Keybitor, Keybitor_wdfsect
+[Keybitor_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+
+
+[Strings]
+
+;
+; Non-Localizable Strings
+;
+
+REG_SZ         = 0x00000000
+REG_MULTI_SZ   = 0x00010000
+REG_EXPAND_SZ  = 0x00020000
+REG_BINARY     = 0x00000001
+REG_DWORD      = 0x00010001
+SERVICEROOT    = "System\CurrentControlSet\Services"
+
+;
+; Localizable Strings
+;
+
+DiskId1 = "Keybitor Disk #1 (Keyboard)"
+DDK_Ex = "Keybitor"
+; Make sure the service description is unique to avoid collision with another INF.
+Keybitor.SvcDesc="Keybitor"
+
